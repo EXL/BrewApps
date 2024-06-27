@@ -1,0 +1,43 @@
+# IntelliJ IDEA
+.idea/
+
+# Visual Studio Code.
+.vscode/
+
+# QtCreator IDE.
+.qtc
+.qtc_clangd
+*.user*
+qtcsettings.cmake
+
+# Generated files.
+*.o
+*.obj
+*.elfp
+*.elf
+*.exe
+*.mod
+
+# Build directory
+build
+
+# CMake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeCache.txt.prev
+CMakeFiles
+CMakeScripts
+Testing
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+.cmake
+
+# CMake patch
+*-prefix/
+
+# Ninja
+build.ninja
+.ninja_*
