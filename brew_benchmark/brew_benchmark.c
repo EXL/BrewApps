@@ -28,7 +28,7 @@
 #define WSTR_TEXT_MAX                                   (128)
 #define WSTR_LONG_TEXT_MAX                             (1024)
 #define SHOW_NOTIFICATION_DELAY_MS                     (1200) /* 1.2 seconds. */
-#define SHOW_NOTIFICATION_IMMEDIATELY_MS                  (1) /* 1 ms. */
+#define SHOW_NOTIFICATION_IMMEDIATELY_MS                 (10) /* 10 ms. */
 
 typedef enum {
 	APP_STATE_MENU_MAIN,
