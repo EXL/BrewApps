@@ -28,6 +28,7 @@
 #define WSTR_TEXT_MAX                                   (128)
 #define WSTR_LONG_TEXT_MAX                             (1024)
 #define SHOW_NOTIFICATION_DELAY_MS                     (1200) /* 1.2 seconds. */
+#define SHOW_NOTIFICATION_IMMEDIATELY_MS                  (1) /* 1 ms. */
 
 typedef enum {
 	APP_STATE_MENU_MAIN,
@@ -81,11 +82,16 @@ static boolean APP_HandleEvent(AEEApplet *pMe, AEEEvent eCode, uint16 wParam, ui
 static boolean APP_DeviceFill(AEEApplet *pMe);
 
 static boolean APP_MenuMainInit(AEEApplet *pMe);
-static boolean APP_ShowNotification(AEEApplet *pMe, const AECHAR *aTitle, const AECHAR *aText, const AECHAR *aDesc);
+static boolean APP_ShowNotification(
+	AEEApplet *pMe, const AECHAR *aTitle, const AECHAR *aText, const AECHAR *aDesc,
+	int32 aDelay, PFNNOTIFY aFunc
+);
 static boolean APP_ShowHelp(AEEApplet *pMe);
 static boolean APP_ShowAbout(AEEApplet *pMe);
+
 static boolean APP_ShowMainMenu(AEEApplet *pMe);
 static boolean APP_ShowResults(AEEApplet *pMe);
+static boolean APP_BenchmarkingInProgress(AEEApplet *pMe);
 
 const AECHAR *wstr_lbl_title = L"Benchmark";
 
@@ -159,16 +165,19 @@ static boolean APP_HandleEvent(AEEApplet *pMe, AEEEvent eCode, uint16 wParam, ui
 			switch (wParam) {
 				case APP_MENU_ITEM_CPU:
 					app->m_AppMenu = APP_MENU_ITEM_CPU;
-					APP_ShowNotification(pMe, L"Please wait...", L"Benchmarking in progress!", NULL);
-					return TRUE;
+					return APP_BenchmarkingInProgress(pMe);
 				case APP_MENU_ITEM_GPU:
-					return TRUE;
+					app->m_AppMenu = APP_MENU_ITEM_GPU;
+					return APP_BenchmarkingInProgress(pMe);
 				case APP_MENU_ITEM_RAM:
-					return TRUE;
+					app->m_AppMenu = APP_MENU_ITEM_RAM;
+					return APP_BenchmarkingInProgress(pMe);
 				case APP_MENU_ITEM_HEAP:
-					return TRUE;
+					app->m_AppMenu = APP_MENU_ITEM_HEAP;
+					return APP_BenchmarkingInProgress(pMe);
 				case APP_MENU_ITEM_DISK:
-					return TRUE;
+					app->m_AppMenu = APP_MENU_ITEM_DISK;
+					return APP_BenchmarkingInProgress(pMe);
 				case APP_MENU_ITEM_HELP:
 					return APP_ShowHelp(pMe);
 				case APP_MENU_ITEM_ABOUT:
@@ -297,7 +306,10 @@ static boolean APP_MenuMainInit(AEEApplet *pMe) {
 	return TRUE;
 }
 
-static boolean APP_ShowNotification(AEEApplet *pMe, const AECHAR *aTitle, const AECHAR *aText, const AECHAR *aDesc) {
+static boolean APP_ShowNotification(
+	AEEApplet *pMe, const AECHAR *aTitle, const AECHAR *aText, const AECHAR *aDesc,
+	int32 aDelay, PFNNOTIFY aFunc
+) {
 	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
 	AEERect rNot;
 	int nAscent;
@@ -335,48 +347,13 @@ static boolean APP_ShowNotification(AEEApplet *pMe, const AECHAR *aTitle, const 
 	}
 
 	IDISPLAY_Update(app->m_App.m_pIDisplay);
-	ISHELL_SetTimer(app->m_App.m_pIShell, SHOW_NOTIFICATION_DELAY_MS, (PFNNOTIFY) APP_ShowResults, (void *) pMe);
+	ISHELL_SetTimer(app->m_App.m_pIShell, aDelay, aFunc, (void *) pMe);
 
 	return TRUE;
 }
 
 static boolean APP_ShowHelp(AEEApplet *pMe) {
 	const uint32 text_size = sizeof(AECHAR) * WSTR_LONG_TEXT_MAX; /* 2048 bytes, 1024 characters. */
-	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
-	AECHAR title[WSTR_TITLE_MAX];
-	AECHAR *text;
-	boolean load_ok;
-
-	app->m_AppState = APP_STATE_STATIC_TEXT;
-	IMENUCTL_SetActive(app->m_pIMenuMainCtl, FALSE);
-
-	IDISPLAY_ClearScreen(app->m_App.m_pIDisplay);
-
-	text = (AECHAR *) MALLOC(text_size);
-	load_ok = ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE, IDS_HELP_TITLE, title, WSTR_TITLE_MAX);
-
-	if (!text || !load_ok) {
-		if (text) {
-			FREE(text);
-		}
-		return FALSE;
-	}
-
-	WSPRINTF(text, sizeof(AECHAR) * 1024, L"%s\n%s\n\n%s\n%s\n%s",
-		app->cpu_result.bogo_time, app->cpu_result.bogo_mips,
-		app->cpu_result.dhrys_mips, app->cpu_result.dhrys_time, app->cpu_result.dhrys_score);
-
-	ISTATIC_SetProperties(app->m_pIStatic, ST_TEXTALLOC | ST_NOSCROLL);
-	ISTATIC_SetText(app->m_pIStatic, title, text, AEE_FONT_BOLD, AEE_FONT_NORMAL);
-	ISTATIC_SetActive(app->m_pIStatic, TRUE);
-	ISTATIC_Redraw(app->m_pIStatic);
-
-	return TRUE;
-}
-
-#if 0
-static boolean APP_ShowHelp(AEEApplet *pMe) {
-	const uint32 text_size = 1024 * sizeof(AECHAR); /* 2048 bytes, 1024 characters. */
 	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
 	AECHAR title[WSTR_TITLE_MAX];
 	AECHAR *text;
@@ -405,7 +382,6 @@ static boolean APP_ShowHelp(AEEApplet *pMe) {
 
 	return TRUE;
 }
-#endif
 
 static boolean APP_ShowAbout(AEEApplet *pMe) {
 	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
@@ -430,16 +406,72 @@ static boolean APP_ShowMainMenu(AEEApplet *pMe) {
 }
 
 static boolean APP_ShowResults(AEEApplet *pMe) {
+	const uint32 text_size = sizeof(AECHAR) * WSTR_LONG_TEXT_MAX; /* 2048 bytes, 1024 characters. */
 	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
+	AECHAR title[WSTR_TITLE_MAX];
+	AECHAR *text;
+	boolean load_ok;
+	uint16 aStrResId;
+
+	app->m_AppState = APP_STATE_STATIC_TEXT;
+
+	switch (app->m_AppMenu) {
+		case APP_MENU_ITEM_CPU:  aStrResId = IDS_RESULT_CPU;   break;
+		case APP_MENU_ITEM_GPU:  aStrResId = IDS_RESULT_GPU;   break;
+		case APP_MENU_ITEM_RAM:  aStrResId = IDS_RESULT_RAM;   break;
+		case APP_MENU_ITEM_HEAP: aStrResId = IDS_RESULT_HEAP;  break;
+		case APP_MENU_ITEM_DISK: aStrResId = IDS_RESULT_DISK;  break;
+		default:                 aStrResId = IDS_RESULT_ERROR; break;
+	}
+
+	text = (AECHAR *) MALLOC(text_size);
+	load_ok = ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE, aStrResId, title, WSTR_TITLE_MAX);
+
+	if (!text || !load_ok) {
+		if (text) {
+			FREE(text);
+		}
+		return FALSE;
+	}
 
 	switch (app->m_AppMenu) {
 		case APP_MENU_ITEM_CPU:
 			BogoMIPS(&app->cpu_result);
 			Dhrystone(&app->cpu_result);
-			return APP_ShowHelp(pMe);
+			WSPRINTF(text, sizeof(AECHAR) * 1024, L"%s\n%s\n\n%s\n%s\n%s",
+				app->cpu_result.bogo_time, app->cpu_result.bogo_mips,
+				app->cpu_result.dhrys_mips, app->cpu_result.dhrys_time, app->cpu_result.dhrys_score);
+			break;
 		default:
+			ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE,
+				IDS_NOT_IMPLEMENTED, text, WSTR_TITLE_MAX);
 			break;
 	}
+
+	ISTATIC_SetProperties(app->m_pIStatic, ST_TEXTALLOC | ST_NOSCROLL);
+	ISTATIC_SetText(app->m_pIStatic, title, text, AEE_FONT_BOLD, AEE_FONT_NORMAL);
+	ISTATIC_SetActive(app->m_pIStatic, TRUE);
+	ISTATIC_Redraw(app->m_pIStatic);
+
+	return TRUE;
+}
+
+static boolean APP_BenchmarkingInProgress(AEEApplet *pMe) {
+	const uint32 s = sizeof(AECHAR);
+	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
+	AECHAR title[WSTR_TITLE_MAX];
+	AECHAR text[WSTR_TEXT_MAX];
+
+	ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE, IDS_TITLE_WAIT, title, s * WSTR_TITLE_MAX);
+	if (app->m_AppDevice.m_ScreenW < 240) {
+		ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE,
+			IDS_BENCHMARKING_SHORT, text, s * WSTR_TEXT_MAX);
+	} else {
+		ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE,
+			IDS_BENCHMARKING_LONG, text, s * WSTR_TEXT_MAX);
+	}
+
+	APP_ShowNotification(pMe, title, text, NULL, SHOW_NOTIFICATION_IMMEDIATELY_MS, (PFNNOTIFY) APP_ShowResults);
 
 	return TRUE;
 }

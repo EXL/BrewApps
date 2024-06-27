@@ -31,6 +31,12 @@
 	<String Id="1010" Name="IDS_MENU_ITEM_DISK">
 		<Text>DISK (IO)</Text>
 	</String>
+	<String Id="1011" Name="IDS_TITLE_WAIT">
+		<Text>Please wait...</Text>
+	</String>
+	<String Id="1012" Name="IDS_BENCHMARKING_LONG">
+		<Text>Benchmarking in progress!</Text>
+	</String>
 	<String Id="1013" Name="IDS_HELP_TITLE">
 		<Text> Benchmark Help</Text>
 	</String>
@@ -42,6 +48,30 @@ Collect "2048" by moving tiles! Use "0" button to reset game.
 Thanks to Jeff Anders for the Material Desing Icons. Thanks to usernameak, kraze1984, and asdf for help and advice.
 
 https://github.com/EXL/2048</Text>
+	</String>
+	<String Id="1015" Name="IDS_BENCHMARKING_SHORT">
+		<Text>Benchmarking...</Text>
+	</String>
+	<String Id="1016" Name="IDS_RESULT_CPU">
+		<Text>CPU/MCU Results</Text>
+	</String>
+	<String Id="1017" Name="IDS_NOT_IMPLEMENTED">
+		<Text>Not yet implemented!</Text>
+	</String>
+	<String Id="1018" Name="IDS_RESULT_GPU">
+		<Text>GPU/IPU Results</Text>
+	</String>
+	<String Id="1019" Name="IDS_RESULT_RAM">
+		<Text>RAM/SRAM Results</Text>
+	</String>
+	<String Id="1020" Name="IDS_RESULT_HEAP">
+		<Text>HEAP/BREW Results</Text>
+	</String>
+	<String Id="1021" Name="IDS_RESULT_DISK">
+		<Text>DISK/IO Results</Text>
+	</String>
+	<String Id="1022" Name="IDS_RESULT_ERROR">
+		<Text>Error!</Text>
 	</String>
 </Strings>
 <Objects MimeType="image/png">
