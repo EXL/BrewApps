@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BREWRes Name="brew_benchmark" VERSION="1">
+<Strings Encoding="Unicode">
+	<String Id="1001" Name="IDS_APP_NAME">
+		<Text>Benchmark</Text>
+	</String>
+	<String Id="1002" Name="IDS_MENU_TITLE_MAIN">
+		<Text> Benchmark</Text>
+	</String>
+	<String Id="1003" Name="IDS_MENU_ITEM_CPU">
+		<Text>CPU (MCU)</Text>
+	</String>
+	<String Id="1004" Name="IDS_MENU_ITEM_GPU">
+		<Text>GPU (IPU)</Text>
+	</String>
+	<String Id="1005" Name="IDS_MENU_ITEM_RAM">
+		<Text>RAM (SRAM)</Text>
+	</String>
+	<String Id="1006" Name="IDS_MENU_ITEM_HELP">
+		<Text>Help...</Text>
+	</String>
+	<String Id="1007" Name="IDS_MENU_ITEM_ABOUT">
+		<Text>About...</Text>
+	</String>
+	<String Id="1008" Name="IDS_MENU_ITEM_EXIT">
+		<Text>Exit</Text>
+	</String>
+	<String Id="1009" Name="IDS_MENU_ITEM_HEAP">
+		<Text>HEAP (BREW)</Text>
+	</String>
+	<String Id="1010" Name="IDS_MENU_ITEM_DISK">
+		<Text>DISK (IO)</Text>
+	</String>
+	<String Id="1013" Name="IDS_HELP_TITLE">
+		<Text> Benchmark Help</Text>
+	</String>
+	<String Id="1014" Name="IDS_HELP_TEXT">
+		<Text>A popular puzzle game for Qualcomm BREW platform written using AEE framework.
+
+Collect "2048" by moving tiles! Use "0" button to reset game.
+
+Thanks to Jeff Anders for the Material Desing Icons. Thanks to usernameak, kraze1984, and asdf for help and advice.
+
+https://github.com/EXL/2048</Text>
+	</String>
+</Strings>
+<Objects MimeType="image/png">
+	<Object Id="5003" Name="IDI_ICON_GENERAL">
+		<File>.\icons\action\icon_reset_16x16.png</File>
+	</Object>
+	<Object Id="5005" Name="IDI_ICON_CHECKBOX_FALSE">
+		<File>.\icons\action\icon_checkbox_false_16x16.png</File>
+	</Object>
+	<Object Id="5006" Name="IDI_ICON_CHECKBOX_TRUE">
+		<File>.\icons\action\icon_checkbox_true_16x16.png</File>
+	</Object>
+	<Object Id="5007" Name="IDI_ICON_HELP">
+		<File>.\icons\action\icon_help_16x16.png</File>
+	</Object>
+	<Object Id="5008" Name="IDI_ICON_ABOUT">
+		<File>.\icons\action\icon_about_16x16.png</File>
+	</Object>
+	<Object Id="5009" Name="IDI_ICON_EXIT">
+		<File>.\icons\action\icon_exit_16x16.png</File>
+	</Object>
+</Objects>
+</BREWRes>

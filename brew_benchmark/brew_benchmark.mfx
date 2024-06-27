@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BREWRes Name="brew_benchmark" VERSION="1">
+<BREWMif>
+	<Module Encoding="Unicode">
+		<!--Author = IDS_STRING_6-->
+		<!--Copyright = IDS_STRING_7-->
+		<!--Version = IDS_STRING_8-->
+		<Privileges>
+			<Privilege Level="File"/>
+		</Privileges>
+		<Exported/>
+		<MimeTypes/>
+		<Imported/>
+		<ACLs>
+			<ACL Type="fs"/>
+		</ACLs>
+	</Module>
+	<Applets>
+		<Applet BaseId="20" CLSID="0x0200e399">
+			<!--Name = IDS_STRING_20-->
+			<Type>0x00000000</Type>
+			<Applethost>0x00000000</Applethost>
+			<Flags/>
+			<Environment/>
+			<Notifications/>
+		</Applet>
+	</Applets>
+</BREWMif>
+<Strings Encoding="Unicode">
+	<String Id="6" Name="IDS_STRING_6">
+		<Text>EXL, 27-Jun-2024</Text>
+	</String>
+	<String Id="7" Name="IDS_STRING_7">
+		<Text>© MotoFan.Ru</Text>
+	</String>
+	<String Id="8" Name="IDS_STRING_8">
+		<Text>Version 1.0.0</Text>
+	</String>
+	<String Id="20" Name="IDS_STRING_20">
+		<Text>Benchmark</Text>
+	</String>
+</Strings>
+</BREWRes>

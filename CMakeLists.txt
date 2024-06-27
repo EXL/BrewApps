@@ -6,6 +6,6 @@ cmake_minimum_required(VERSION 3.16)
 ########################################################################################################################
 # Project section: General
 #
-project(P2kElfs)
+project(BrewApps)
 
 add_subdirectory(brew_benchmark)
