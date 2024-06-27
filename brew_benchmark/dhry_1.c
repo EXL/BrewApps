@@ -258,13 +258,13 @@ int Dhrystone( BENCHMARK_RESULTS_CPU_T *result ) //formerly main()
   dhrys_i = (Number_Of_Runs * 1000) / User_Time;
   dhrys_f = (((Number_Of_Runs * 1000) % User_Time) * 100) / User_Time;
 
-  WSPRINTF(result->dhrys_score, sizeof(AECHAR) * RESULT_STRING, L"%lu.%02lu D/sec", dhrys_i, dhrys_f);
+  WSPRINTF(result->dhrys_mips, sizeof(AECHAR) * RESULT_STRING, L"%lu.%02lu D/sec", dhrys_i, dhrys_f);
 
   dmips_i = (dhrys_i * 100 + dhrys_f) / DMIPS_VAX_11_780_CONST;
   dmips_i /= 100;
   dmips_f = ((dhrys_i * 100 + dhrys_f) / DMIPS_VAX_11_780_CONST) % 100;
 
-  WSPRINTF(result->dhrys_score, sizeof(AECHAR) * RESULT_STRING, L"%lu.%02lu DMIPS", dhrys_i, dhrys_f);
+  WSPRINTF(result->dhrys_score, sizeof(AECHAR) * RESULT_STRING, L"%lu.%02lu DMIPS", dmips_i, dmips_f);
 
   printf("User_Time %ld\n",User_Time);
   printf("Number_Of_Runs %d\n",Number_Of_Runs);

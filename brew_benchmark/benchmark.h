@@ -7,7 +7,7 @@
 
 /* CPU Benchmark */
 
-#define TICKS_PER_SEC                  (8192)
+#define TICKS_PER_SEC                  (1000)
 #define DHRYSTONE_LOOP_RUNS            (20000) /* 2000 - Import from GBA */
 #define DMIPS_VAX_11_780_CONST         (1757)
 

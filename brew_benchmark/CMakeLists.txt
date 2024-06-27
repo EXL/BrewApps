@@ -15,7 +15,7 @@ include_directories(
 add_definitions("-DLINUX_BOGOMIPS")
 #add_definitions("-DNO_ASM")
 
-add_brew_module(brew_2048
+add_brew_module(brew_benchmark
 	${BREW_PLATFORM_SDK_ROOT}/src/AEEModGen.c
 	${BREW_PLATFORM_SDK_ROOT}/src/AEEAppGen.c
 

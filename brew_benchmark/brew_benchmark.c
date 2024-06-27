@@ -22,8 +22,11 @@
 #include "brew_benchmark.bid"
 #include "brew_benchmark.brh"
 
+#include "benchmark.h"
+
 #define WSTR_TITLE_MAX                                   (64)
 #define WSTR_TEXT_MAX                                   (128)
+#define WSTR_LONG_TEXT_MAX                             (1024)
 #define SHOW_NOTIFICATION_DELAY_MS                     (1200) /* 1.2 seconds. */
 
 typedef enum {
@@ -61,12 +64,15 @@ typedef struct {
 typedef struct {
 	AEEApplet m_App;
 
+	APP_MENU_T m_AppMenu;
 	APP_STATE_T m_AppState;
 	APP_DEVICE_T m_AppDevice;
 
 	IFileMgr *m_pIFileMgr;
 	IMenuCtl *m_pIMenuMainCtl;
 	IStatic *m_pIStatic;
+
+	BENCHMARK_RESULTS_CPU_T cpu_result;
 } APP_INSTANCE_T;
 
 static boolean APP_InitAppData(AEEApplet *pMe);
@@ -79,6 +85,7 @@ static boolean APP_ShowNotification(AEEApplet *pMe, const AECHAR *aTitle, const 
 static boolean APP_ShowHelp(AEEApplet *pMe);
 static boolean APP_ShowAbout(AEEApplet *pMe);
 static boolean APP_ShowMainMenu(AEEApplet *pMe);
+static boolean APP_ShowResults(AEEApplet *pMe);
 
 const AECHAR *wstr_lbl_title = L"Benchmark";
 
@@ -151,6 +158,8 @@ static boolean APP_HandleEvent(AEEApplet *pMe, AEEEvent eCode, uint16 wParam, ui
 		case EVT_COMMAND:
 			switch (wParam) {
 				case APP_MENU_ITEM_CPU:
+					app->m_AppMenu = APP_MENU_ITEM_CPU;
+					APP_ShowNotification(pMe, L"Please wait...", L"Benchmarking in progress!", NULL);
 					return TRUE;
 				case APP_MENU_ITEM_GPU:
 					return TRUE;
@@ -307,6 +316,8 @@ static boolean APP_ShowNotification(AEEApplet *pMe, const AECHAR *aTitle, const 
 		text_h * 4
 	);
 
+	IDISPLAY_ClearScreen(app->m_App.m_pIDisplay);
+
 	IDISPLAY_DrawRect(app->m_App.m_pIDisplay, &rNot, RGB_BLACK, RGB_WHITE, IDF_RECT_FRAME | IDF_RECT_FILL);
 
 	rNot.x  += 1;
@@ -324,11 +335,46 @@ static boolean APP_ShowNotification(AEEApplet *pMe, const AECHAR *aTitle, const 
 	}
 
 	IDISPLAY_Update(app->m_App.m_pIDisplay);
-	ISHELL_SetTimer(app->m_App.m_pIShell, SHOW_NOTIFICATION_DELAY_MS, (PFNNOTIFY) APP_ShowMainMenu, (void *) pMe);
+	ISHELL_SetTimer(app->m_App.m_pIShell, SHOW_NOTIFICATION_DELAY_MS, (PFNNOTIFY) APP_ShowResults, (void *) pMe);
 
 	return TRUE;
 }
 
+static boolean APP_ShowHelp(AEEApplet *pMe) {
+	const uint32 text_size = sizeof(AECHAR) * WSTR_LONG_TEXT_MAX; /* 2048 bytes, 1024 characters. */
+	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
+	AECHAR title[WSTR_TITLE_MAX];
+	AECHAR *text;
+	boolean load_ok;
+
+	app->m_AppState = APP_STATE_STATIC_TEXT;
+	IMENUCTL_SetActive(app->m_pIMenuMainCtl, FALSE);
+
+	IDISPLAY_ClearScreen(app->m_App.m_pIDisplay);
+
+	text = (AECHAR *) MALLOC(text_size);
+	load_ok = ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE, IDS_HELP_TITLE, title, WSTR_TITLE_MAX);
+
+	if (!text || !load_ok) {
+		if (text) {
+			FREE(text);
+		}
+		return FALSE;
+	}
+
+	WSPRINTF(text, sizeof(AECHAR) * 1024, L"%s\n%s\n\n%s\n%s\n%s",
+		app->cpu_result.bogo_time, app->cpu_result.bogo_mips,
+		app->cpu_result.dhrys_mips, app->cpu_result.dhrys_time, app->cpu_result.dhrys_score);
+
+	ISTATIC_SetProperties(app->m_pIStatic, ST_TEXTALLOC | ST_NOSCROLL);
+	ISTATIC_SetText(app->m_pIStatic, title, text, AEE_FONT_BOLD, AEE_FONT_NORMAL);
+	ISTATIC_SetActive(app->m_pIStatic, TRUE);
+	ISTATIC_Redraw(app->m_pIStatic);
+
+	return TRUE;
+}
+
+#if 0
 static boolean APP_ShowHelp(AEEApplet *pMe) {
 	const uint32 text_size = 1024 * sizeof(AECHAR); /* 2048 bytes, 1024 characters. */
 	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
@@ -359,6 +405,7 @@ static boolean APP_ShowHelp(AEEApplet *pMe) {
 
 	return TRUE;
 }
+#endif
 
 static boolean APP_ShowAbout(AEEApplet *pMe) {
 	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
@@ -378,6 +425,21 @@ static boolean APP_ShowMainMenu(AEEApplet *pMe) {
 
 	app->m_AppState = APP_STATE_MENU_MAIN;
 	IMENUCTL_SetActive(app->m_pIMenuMainCtl, TRUE);
+
+	return TRUE;
+}
+
+static boolean APP_ShowResults(AEEApplet *pMe) {
+	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
+
+	switch (app->m_AppMenu) {
+		case APP_MENU_ITEM_CPU:
+			BogoMIPS(&app->cpu_result);
+			Dhrystone(&app->cpu_result);
+			return APP_ShowHelp(pMe);
+		default:
+			break;
+	}
 
 	return TRUE;
 }
