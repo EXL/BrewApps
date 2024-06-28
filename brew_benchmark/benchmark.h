@@ -86,9 +86,9 @@ extern uint32 Bench_GPU_Passes(uint32 bmp_width, uint32 bmp_height, AECHAR *fps,
 
 /* RAM Benchmark */
 
-#define RAM_TOP_BLOCKS_COUNT           (6)
-#define RAM_STEP_SIZE                  (256)
-#if defined(EM1) || defined(EM2)
+#define RAM_TOP_BLOCKS_COUNT           (3)
+#define RAM_STEP_SIZE                  (4096)
+#if defined(EM1) || defined(EM2) || defined(__BREW__)
 #define RAM_TOTAL_BLOCKS_COUNT         (1024)
 #else
 #define RAM_TOTAL_BLOCKS_COUNT         (512)
@@ -107,8 +107,8 @@ typedef struct {
 	uint32 block_time;
 } RAM_ALLOCATED_BLOCK_T;
 
-extern uint32 TopOfBiggestRamBlocks(BENCHMARK_RESULTS_RAM_T *result, boolean uis);
-extern uint32 TotalRamSize(BENCHMARK_RESULTS_RAM_T *result, boolean uis);
+extern boolean TopOfBiggestRamBlocks(BENCHMARK_RESULTS_RAM_T *result);
+extern boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result);
 
 /* Java Heap Benchmark */
 

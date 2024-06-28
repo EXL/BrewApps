@@ -25,7 +25,7 @@ Ready-to-run ELFs builds are available in the [Release](https://github.com/EXL/B
 
     Port of the "Spout" game by kuni to the Qualcomm BREW platform for CDMA phones.
 
-5. **[Spout](brew_spout_gl)**
+5. **[SpoutGL](brew_spout_gl)**
 
     Port of the "Spout" game by kuni to the Qualcomm BREW platform for CDMA phones using OpenGL ES blitter and 3D-cube.
 

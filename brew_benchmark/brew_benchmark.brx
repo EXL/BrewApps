@@ -76,22 +76,16 @@ https://github.com/EXL/2048</Text>
 </Strings>
 <Objects MimeType="image/png">
 	<Object Id="5003" Name="IDI_ICON_GENERAL">
-		<File>.\icons\action\icon_reset_16x16.png</File>
-	</Object>
-	<Object Id="5005" Name="IDI_ICON_CHECKBOX_FALSE">
-		<File>.\icons\action\icon_checkbox_false_16x16.png</File>
-	</Object>
-	<Object Id="5006" Name="IDI_ICON_CHECKBOX_TRUE">
-		<File>.\icons\action\icon_checkbox_true_16x16.png</File>
+		<File>.\icons\actions\icon_reset_16x16.png</File>
 	</Object>
 	<Object Id="5007" Name="IDI_ICON_HELP">
-		<File>.\icons\action\icon_help_16x16.png</File>
+		<File>.\icons\actions\icon_help_16x16.png</File>
 	</Object>
 	<Object Id="5008" Name="IDI_ICON_ABOUT">
-		<File>.\icons\action\icon_about_16x16.png</File>
+		<File>.\icons\actions\icon_about_16x16.png</File>
 	</Object>
 	<Object Id="5009" Name="IDI_ICON_EXIT">
-		<File>.\icons\action\icon_exit_16x16.png</File>
+		<File>.\icons\actions\icon_exit_16x16.png</File>
 	</Object>
 </Objects>
 </BREWRes>

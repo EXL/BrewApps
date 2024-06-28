@@ -74,6 +74,7 @@ typedef struct {
 	IStatic *m_pIStatic;
 
 	BENCHMARK_RESULTS_CPU_T cpu_result;
+	BENCHMARK_RESULTS_RAM_T ram_result;
 } APP_INSTANCE_T;
 
 static boolean APP_InitAppData(AEEApplet *pMe);
@@ -438,9 +439,18 @@ static boolean APP_ShowResults(AEEApplet *pMe) {
 		case APP_MENU_ITEM_CPU:
 			BogoMIPS(&app->cpu_result);
 			Dhrystone(&app->cpu_result);
-			WSPRINTF(text, sizeof(AECHAR) * 1024, L"%s\n%s\n\n%s\n%s\n%s",
+			WSPRINTF(text, sizeof(AECHAR) * 1024,
+				L"BogoMIPS:\n    %s\n    %s\n\nDhrystone 2.1:\n    %s\n    %s\n    %s",
 				app->cpu_result.bogo_time, app->cpu_result.bogo_mips,
 				app->cpu_result.dhrys_mips, app->cpu_result.dhrys_time, app->cpu_result.dhrys_score);
+			break;
+		case APP_MENU_ITEM_RAM:
+			TotalRamSize(&app->ram_result);
+			TopOfBiggestRamBlocks(&app->ram_result);
+			WSPRINTF(text, sizeof(AECHAR) * 1024,
+				L"Total available:\n    %s\n\nTop 3 blocks:\n    %s\n    %s\n    %s",
+				app->ram_result.total,
+				app->ram_result.blocks[0], app->ram_result.blocks[1], app->ram_result.blocks[2]);
 			break;
 		default:
 			ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE,
