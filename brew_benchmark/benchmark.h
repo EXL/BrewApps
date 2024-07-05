@@ -1,7 +1,9 @@
 #ifndef BENCHMARK_H
 #define BENCHMARK_H
 
+#include <AEEAppGen.h>
 #include <AEEStdLib.h>
+#include <AEEHeap.h>
 
 #define RESULT_STRING                  (64)
 
@@ -87,7 +89,7 @@ extern uint32 Bench_GPU_Passes(uint32 bmp_width, uint32 bmp_height, AECHAR *fps,
 /* RAM Benchmark */
 
 #define RAM_TOP_BLOCKS_COUNT           (3)
-#define RAM_STEP_SIZE                  (4096)
+#define RAM_STEP_SIZE                  (131072)
 #if defined(EM1) || defined(EM2) || defined(__BREW__)
 #define RAM_TOTAL_BLOCKS_COUNT         (1024)
 #else
@@ -116,7 +118,7 @@ extern boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result);
 #if defined(EM1) || defined(EM2)
 #define HEAP_STEP_SIZE                 (5591256 - 393216)
 #else
-#define HEAP_STEP_SIZE                 (4096)
+#define HEAP_STEP_SIZE                 (131072)
 #endif
 #define HEAP_TOTAL_BLOCKS_COUNT        (512)
 #define HEAP_START_SIZE_TOTAL          (HEAP_STEP_SIZE * 8)
@@ -124,6 +126,7 @@ extern boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result);
 typedef struct {
 	AECHAR total[RESULT_STRING];
 	AECHAR desc[RESULT_STRING];
+	AECHAR used[RESULT_STRING];
 } BENCHMARK_RESULTS_HEAP_T;
 
 typedef struct {
@@ -131,7 +134,7 @@ typedef struct {
 	uint32 block_size;
 } HEAP_ALLOCATED_BLOCK_T;
 
-extern uint32 TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result);
+extern boolean TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result, IShell *shell, IHeap *heap);
 
 /* Disk Benchmark */
 

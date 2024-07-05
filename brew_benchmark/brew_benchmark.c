@@ -18,6 +18,7 @@
 #include <AEEStdLib.h>
 #include <AEEMenu.h>
 #include <AEEFile.h>
+#include <AEEHeap.h>
 
 #include "brew_benchmark.bid"
 #include "brew_benchmark.brh"
@@ -72,9 +73,11 @@ typedef struct {
 	IFileMgr *m_pIFileMgr;
 	IMenuCtl *m_pIMenuMainCtl;
 	IStatic *m_pIStatic;
+	IHeap *m_pIHeap;
 
 	BENCHMARK_RESULTS_CPU_T cpu_result;
 	BENCHMARK_RESULTS_RAM_T ram_result;
+	BENCHMARK_RESULTS_HEAP_T heap_result;
 } APP_INSTANCE_T;
 
 static boolean APP_InitAppData(AEEApplet *pMe);
@@ -93,6 +96,8 @@ static boolean APP_ShowAbout(AEEApplet *pMe);
 static boolean APP_ShowMainMenu(AEEApplet *pMe);
 static boolean APP_ShowResults(AEEApplet *pMe);
 static boolean APP_BenchmarkingInProgress(AEEApplet *pMe);
+
+static boolean GFX_SetCustomColors(AEEApplet *pMe);
 
 const AECHAR *wstr_lbl_title = L"Benchmark";
 
@@ -136,6 +141,9 @@ static boolean APP_InitAppData(AEEApplet *pMe) {
 	if (ISHELL_CreateInstance(app->m_App.m_pIShell, AEECLSID_STATIC, (void **) &app->m_pIStatic) != AEE_SUCCESS) {
 		return FALSE;
 	}
+	if (ISHELL_CreateInstance(app->m_App.m_pIShell, AEECLSID_HEAP, (void **) &app->m_pIHeap) != AEE_SUCCESS) {
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -146,6 +154,7 @@ static boolean APP_FreeAppData(AEEApplet *pMe) {
 	IMENUCTL_Release(app->m_pIMenuMainCtl);
 	IFILEMGR_Release(app->m_pIFileMgr);
 	ISTATIC_Release(app->m_pIStatic);
+	IHEAP_Release(app->m_pIHeap);
 
 	return TRUE;
 }
@@ -320,6 +329,8 @@ static boolean APP_ShowNotification(
 	app->m_AppState = APP_STATE_NOTIFICATION;
 	IMENUCTL_SetActive(app->m_pIMenuMainCtl, FALSE);
 
+	GFX_SetCustomColors(pMe);
+
 	IDISPLAY_GetFontMetrics(app->m_App.m_pIDisplay, AEE_FONT_BOLD, &nAscent, &nDescent);
 	text_h = nAscent + nDescent;
 	SETAEERECT(&rNot,
@@ -363,6 +374,7 @@ static boolean APP_ShowHelp(AEEApplet *pMe) {
 	app->m_AppState = APP_STATE_STATIC_TEXT;
 	IMENUCTL_SetActive(app->m_pIMenuMainCtl, FALSE);
 
+	GFX_SetCustomColors(pMe);
 	IDISPLAY_ClearScreen(app->m_App.m_pIDisplay);
 
 	text = (AECHAR *) MALLOC(text_size);
@@ -390,6 +402,7 @@ static boolean APP_ShowAbout(AEEApplet *pMe) {
 	app->m_AppState = APP_STATE_ABOUT;
 	IMENUCTL_SetActive(app->m_pIMenuMainCtl, FALSE);
 
+	GFX_SetCustomColors(pMe);
 	IDISPLAY_ClearScreen(app->m_App.m_pIDisplay);
 
 	ISHELL_ShowCopyright(app->m_App.m_pIShell);
@@ -446,11 +459,15 @@ static boolean APP_ShowResults(AEEApplet *pMe) {
 			break;
 		case APP_MENU_ITEM_RAM:
 			TotalRamSize(&app->ram_result);
-			TopOfBiggestRamBlocks(&app->ram_result);
+			/* TopOfBiggestRamBlocks(&app->ram_result); */
+			WSPRINTF(text, sizeof(AECHAR) * 1024, L"Total available:\n    %s", app->ram_result.total);
+			break;
+		case APP_MENU_ITEM_HEAP:
+			TotalHeapSize(&app->heap_result, app->m_App.m_pIShell, app->m_pIHeap);
 			WSPRINTF(text, sizeof(AECHAR) * 1024,
-				L"Total available:\n    %s\n\nTop 3 blocks:\n    %s\n    %s\n    %s",
-				app->ram_result.total,
-				app->ram_result.blocks[0], app->ram_result.blocks[1], app->ram_result.blocks[2]);
+				L"Total available:\n    %s\n    %s\n\nUsed memory:\n    %s",
+				app->heap_result.total, app->heap_result.desc, app->heap_result.used);
+
 			break;
 		default:
 			ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE,
@@ -482,6 +499,16 @@ static boolean APP_BenchmarkingInProgress(AEEApplet *pMe) {
 	}
 
 	APP_ShowNotification(pMe, title, text, NULL, SHOW_NOTIFICATION_IMMEDIATELY_MS, (PFNNOTIFY) APP_ShowResults);
+
+	return TRUE;
+}
+
+static boolean GFX_SetCustomColors(AEEApplet *pMe) {
+	APP_INSTANCE_T *app = (APP_INSTANCE_T *) pMe;
+	AEEMenuColors menu_colors;
+
+	IDISPLAY_SetColor(app->m_App.m_pIDisplay, CLR_SYS_WIN, RGB_WHITE);
+	IDISPLAY_SetColor(app->m_App.m_pIDisplay, CLR_USER_BACKGROUND, RGB_WHITE);
 
 	return TRUE;
 }

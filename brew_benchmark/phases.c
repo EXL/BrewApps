@@ -67,7 +67,7 @@ boolean BogoMIPS(BENCHMARK_RESULTS_CPU_T *result) {
 }
 #endif
 
-static void *AllocateBiggestBlock(uint32 start_size, uint32 *max_block_size, uint32 step, boolean brew_heap) {
+static void *AllocateBiggestBlock(uint32 start_size, uint32 *max_block_size, uint32 step, IHeap *brew_heap) {
 	uint32 size;
 	boolean error;
 	void *block_address;
@@ -77,36 +77,32 @@ static void *AllocateBiggestBlock(uint32 start_size, uint32 *max_block_size, uin
 	block_address = NULL;
 
 	while (!error) {
-		if (brew_heap) {
+		if (!brew_heap) {
 			block_address = MALLOC(size);
 			if (block_address == NULL) {
 				error = TRUE;
 			}
 		} else {
-			block_address = MALLOC(size);
-			if (block_address == NULL) {
+			if (!IHEAP_CheckAvail(brew_heap, size)) {
 				error = TRUE;
 			}
 		}
 		if (!error) {
-			if (brew_heap) {
-				FREE(block_address);
-			} else {
+			if (!brew_heap) {
 				FREE(block_address);
 			}
 			size += step * 4;
 		} else {
 			while (error && size > start_size) {
 				size -= step;
-				if (brew_heap) {
+				if (!brew_heap) {
 					block_address = MALLOC(size);
-					if (block_address == NULL) {
-						error = TRUE;
+					if (block_address != NULL) {
+						error = FALSE;
 					}
 				} else {
-					block_address = MALLOC(size);
-					if (block_address == NULL) {
-						error = TRUE;
+					if (IHEAP_CheckAvail(brew_heap, size)) {
+						error = FALSE;
 					}
 				}
 			}
@@ -114,7 +110,7 @@ static void *AllocateBiggestBlock(uint32 start_size, uint32 *max_block_size, uin
 		}
 	}
 
-	if (block_address) {
+	if (block_address || brew_heap) {
 		*max_block_size = size;
 	} else {
 		*max_block_size = 0;
@@ -139,7 +135,7 @@ boolean TopOfBiggestRamBlocks(BENCHMARK_RESULTS_RAM_T *result) {
 
 		time_start = GETUPTIMEMS();
 		top_blocks[i].block_address = AllocateBiggestBlock(
-			RAM_START_SIZE_BLOCK, &top_blocks[i].block_size, RAM_STEP_SIZE, FALSE
+			RAM_START_SIZE_BLOCK, &top_blocks[i].block_size, RAM_STEP_SIZE, NULL
 		);
 		time_end = GETUPTIMEMS();
 		top_blocks[i].block_time = time_end - time_start;
@@ -179,7 +175,7 @@ boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result) {
 
 	do {
 		ram_blocks[i].block_address = AllocateBiggestBlock(
-			RAM_START_SIZE_TOTAL, &ram_blocks[i].block_size, RAM_STEP_SIZE, FALSE
+			RAM_START_SIZE_TOTAL, &ram_blocks[i].block_size, RAM_STEP_SIZE, NULL
 		);
 		total_size += ram_blocks[i].block_size;
 	} while (ram_blocks[i++].block_address != NULL);
@@ -202,58 +198,39 @@ boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result) {
 	return error;
 }
 
-#if 0
-uint32 TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result) {
-	UINT16 i;
-	uint32 status;
+boolean TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result, IShell *shell, IHeap *heap) {
+	AEEDeviceInfo device_info;
+	uint16 i;
+	boolean error;
 	uint32 total_size;
-	uint64 time_start;
-	uint64 time_end;
+	uint32 time_start;
+	uint32 time_end;
 	uint32 time_result;
+	uint32 mem_used;
+	uint32 mem_total;
 	HEAP_ALLOCATED_BLOCK_T heap_blocks[HEAP_TOTAL_BLOCKS_COUNT];
 
-	status = RESULT_OK;
+	error = FALSE;
 	i = 0;
 	total_size = 0;
 
-	time_start = suPalReadTime();
+	time_start = GETUPTIMEMS();
 
-	/* Can I use Java Heap functions? */
-	heap_blocks[i].block_address = AmMemAllocPointer(HEAP_STEP_SIZE);
-	if (heap_blocks[i].block_address != NULL) {
-		AmMemFreePointer(heap_blocks[i].block_address);
-	} else {
-		status = RESULT_FAIL;
-	}
-
-/* BUG: Is the M-CORE 7 MiB Heap patch bugged? `AmMemAllocPointer()` can only be called a few times. */
-#if defined(EM1) || defined(EM2)
-	total_size = HEAP_STEP_SIZE;
-#else
 	do {
 		heap_blocks[i].block_address = AllocateBiggestBlock(
-			HEAP_START_SIZE_TOTAL, &heap_blocks[i].block_size, HEAP_STEP_SIZE, TRUE, FALSE
+			HEAP_START_SIZE_TOTAL, &heap_blocks[i].block_size, HEAP_STEP_SIZE, heap
 		);
 		total_size += heap_blocks[i].block_size;
 	} while (heap_blocks[i++].block_address != NULL);
-#endif
 
-	time_end = suPalReadTime();
+	time_end = GETUPTIMEMS();
 
-	i -= 1;
-	while (i-- > 0) {
-		AmMemFreePointer(heap_blocks[i].block_address);
-	}
-
-	time_result = (uint32) suPalTicksToMsec(time_end - time_start);
+	time_result = time_end - time_start;
 
 	LOG("HEAP: Total time: %d\n", time_result);
 	LOG("HEAP: Total size: %d\n", total_size);
 
-	u_ltou(time_result, result->total);
-	u_strcpy(result->total + u_strlen(result->total), L" ms | ");
-	u_ltou(total_size, result->total + u_strlen(result->total));
-	u_strcpy(result->total + u_strlen(result->total), L" B");
+	WSPRINTF(result->total, sizeof(AECHAR) * RESULT_STRING, L"%lu ms | %lu B", time_result, total_size);
 
 	{
 		uint32 time_i;
@@ -267,18 +244,22 @@ uint32 TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result) {
 		size_i = total_size / 1024;
 		size_f = ((total_size % 1024) * 100) / 1024;
 
-		sprintf(float_string, "%lu.%02lu", time_i, time_f);
-		u_atou(float_string, result->desc);
-		u_strcpy(result->desc + u_strlen(result->desc), L" sec | ");
-
-		sprintf(float_string, "%lu.%02lu", size_i, size_f);
-		u_atou(float_string, result->desc + u_strlen(result->desc));
-		u_strcpy(result->desc + u_strlen(result->desc), L" KiB");
+		WSPRINTF(result->desc, sizeof(AECHAR) * RESULT_STRING, L"%lu.%02lu sec | %lu.%02lu KiB",
+			time_i, time_f, size_i, size_f);
 	}
 
-	return status;
+	mem_used = IHEAP_GetMemStats(heap);
+
+	device_info.wStructSize = sizeof(AEEDeviceInfo);
+	ISHELL_GetDeviceInfo(shell, &device_info);
+	mem_total = device_info.dwRAM;
+
+	WSPRINTF(result->used, sizeof(AECHAR) * RESULT_STRING, L"%lu B / %lu B", mem_used, mem_total);
+
+	return error;
 }
 
+#if 0
 uint32 Bench_GPU_Passes(uint32 bmp_width, uint32 bmp_height, WCHAR *fps, WCHAR *fms, WCHAR *props) {
 	uint32 status;
 
