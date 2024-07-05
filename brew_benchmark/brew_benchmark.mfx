@@ -14,6 +14,17 @@
 		<Text>Benchmark</Text>
 	</String>
 </Strings>
+<Objects MimeType="image/png">
+	<Object Id="21" Name="IDI_OBJECT_21">
+		<File>.\icons\brew_medium_26x26.png</File>
+	</Object>
+	<Object Id="22" Name="IDI_OBJECT_22">
+		<File>.\icons\brew_large_65x42.png</File>
+	</Object>
+	<Object Id="23" Name="IDI_OBJECT_23">
+		<File>.\icons\brew_small_16x16.png</File>
+	</Object>
+</Objects>
 <BREWMif>
 	<Module Encoding="Unicode">
 		<!--Author = IDS_STRING_6-->
@@ -43,15 +54,4 @@
 		</Applet>
 	</Applets>
 </BREWMif>
-<Objects MimeType="image/png">
-	<Object Id="21" Name="IDI_OBJECT_21">
-		<File>Z:\CDMA\icons\brew_medium_26x26.png</File>
-	</Object>
-	<Object Id="22" Name="IDI_OBJECT_22">
-		<File>Z:\CDMA\icons\brew_large_65x42.png</File>
-	</Object>
-	<Object Id="23" Name="IDI_OBJECT_23">
-		<File>Z:\CDMA\icons\brew_small_16x16.png</File>
-	</Object>
-</Objects>
 </BREWRes>

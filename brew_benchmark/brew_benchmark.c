@@ -42,6 +42,7 @@ typedef enum {
 typedef enum {
 	APP_MENU_ITEM_CPU,
 	APP_MENU_ITEM_GPU,
+	APP_MENU_ITEM_GLES,
 	APP_MENU_ITEM_RAM,
 	APP_MENU_ITEM_HEAP,
 	APP_MENU_ITEM_DISK,
@@ -179,6 +180,9 @@ static boolean APP_HandleEvent(AEEApplet *pMe, AEEEvent eCode, uint16 wParam, ui
 				case APP_MENU_ITEM_GPU:
 					app->m_AppMenu = APP_MENU_ITEM_GPU;
 					return APP_BenchmarkingInProgress(pMe);
+				case APP_MENU_ITEM_GLES:
+					app->m_AppMenu = APP_MENU_ITEM_GLES;
+					return APP_BenchmarkingInProgress(pMe);
 				case APP_MENU_ITEM_RAM:
 					app->m_AppMenu = APP_MENU_ITEM_RAM;
 					return APP_BenchmarkingInProgress(pMe);
@@ -279,6 +283,11 @@ static boolean APP_MenuMainInit(AEEApplet *pMe) {
 	menu_item.wText = IDS_MENU_ITEM_GPU;
 	menu_item.wImage = IDI_ICON_GENERAL;
 	menu_item.wItemID = APP_MENU_ITEM_GPU;
+	IMENUCTL_AddItemEx(app->m_pIMenuMainCtl, &menu_item);
+
+	menu_item.wText = IDS_MENU_ITEM_GLES;
+	menu_item.wImage = IDI_ICON_GENERAL;
+	menu_item.wItemID = APP_MENU_ITEM_GLES;
 	IMENUCTL_AddItemEx(app->m_pIMenuMainCtl, &menu_item);
 
 	menu_item.wText = IDS_MENU_ITEM_RAM;
@@ -432,6 +441,7 @@ static boolean APP_ShowResults(AEEApplet *pMe) {
 	switch (app->m_AppMenu) {
 		case APP_MENU_ITEM_CPU:  aStrResId = IDS_RESULT_CPU;   break;
 		case APP_MENU_ITEM_GPU:  aStrResId = IDS_RESULT_GPU;   break;
+		case APP_MENU_ITEM_GLES: aStrResId = IDS_RESULT_GLES;  break;
 		case APP_MENU_ITEM_RAM:  aStrResId = IDS_RESULT_RAM;   break;
 		case APP_MENU_ITEM_HEAP: aStrResId = IDS_RESULT_HEAP;  break;
 		case APP_MENU_ITEM_DISK: aStrResId = IDS_RESULT_DISK;  break;

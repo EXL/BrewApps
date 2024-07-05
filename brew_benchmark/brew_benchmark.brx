@@ -73,6 +73,12 @@ https://github.com/EXL/2048</Text>
 	<String Id="1022" Name="IDS_RESULT_ERROR">
 		<Text>Error!</Text>
 	</String>
+	<String Id="1023" Name="IDS_MENU_ITEM_GLES">
+		<Text>GPU (GLES)</Text>
+	</String>
+	<String Id="1024" Name="IDS_RESULT_GLES">
+		<Text>GPU/GLES Results</Text>
+	</String>
 </Strings>
 <Objects MimeType="image/png">
 	<Object Id="5003" Name="IDI_ICON_GENERAL">
