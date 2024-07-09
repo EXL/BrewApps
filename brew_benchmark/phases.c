@@ -326,7 +326,7 @@ extern boolean DiskBenchmark(AECHAR *res, IFileMgr *aFileMgr, const char *aPath,
 
 	DeleteFileIfExist(aFileMgr, aPath);
 
-	WSPRINTF(res, sizeof(AECHAR) * RESULT_STRING, L"%luK, W:%lu, R:%lu, ms.\n", ch / 1024, delta_w, delta_r);
+	WSPRINTF(res, sizeof(AECHAR) * RESULT_STRING, L" %luK, W:%lu, R:%lu, ms.\n", ch / 1024, delta_w, delta_r);
 
 	return TRUE;
 }
@@ -363,7 +363,7 @@ extern boolean DisksResult(IFileMgr *aFileMgr, AECHAR *aDiskResult) {
 		DiskBenchmark(result, aFileMgr, "brew_benchmark.bin", buffer, 0x8000, BENCHMARK_FILE_SIZE);
 		WSTRCAT(aDiskResult, result);
 
-		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L"Free: %lu B\nTotal: %lu B\n\n", free, total);
+		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L" Free: %lu B\n Total: %lu B\n\n", free, total);
 		WSTRCAT(aDiskResult, result);
 	} else {
 		WSTRCAT(aDiskResult, L"Phone Memory Error!\n");
@@ -383,7 +383,7 @@ extern boolean DisksResult(IFileMgr *aFileMgr, AECHAR *aDiskResult) {
 		DiskBenchmark(result, aFileMgr, AEEFS_CARD0_DIR "brew_benchmark.bin", buffer, 0x8000, BENCHMARK_FILE_SIZE);
 		WSTRCAT(aDiskResult, result);
 
-		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L"Free: %lu B\nTotal: %lu B\n\n", free, total);
+		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L" Free: %lu B\n Total: %lu B\n\n", free, total);
 		WSTRCAT(aDiskResult, result);
 	} else {
 		WSTRCAT(aDiskResult, L"MemCard is full / not present!");
