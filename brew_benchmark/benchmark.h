@@ -4,6 +4,7 @@
 #include <AEEAppGen.h>
 #include <AEEStdLib.h>
 #include <AEEHeap.h>
+#include <AEEFile.h>
 
 #define RESULT_STRING                  (64)
 
@@ -23,9 +24,7 @@ typedef struct {
 } BENCHMARK_RESULTS_CPU_T;
 
 extern void delay_bmips(uint32 loops);
-
 extern boolean BogoMIPS(BENCHMARK_RESULTS_CPU_T *result);
-
 extern int Dhrystone(BENCHMARK_RESULTS_CPU_T *result);
 
 /* GPU Benchmark */
@@ -138,10 +137,10 @@ extern boolean TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result, IShell *shell, IH
 
 /* Disk Benchmark */
 
-#define MAX_VOLUMES_COUNT              (5)
-#define LENGTH_VOLUME_NAME             (3 + 1) /* '/a/\0' */
+#define MEMORY_CHUNK_BUFFER              (32768)
+#define BENCHMARK_FILE_SIZE              (MEMORY_CHUNK_BUFFER * 8)
 
-extern uint32 DisksResult(AECHAR *disk_result);
-extern uint32 DiskBenchmark(AECHAR *disk_result, AECHAR *disk, uint32 addr, uint32 c_size, uint32 f_size);
+extern boolean DisksResult(IFileMgr *aFileMgr, AECHAR *aDiskResult);
+extern boolean DiskBenchmark(AECHAR *res, IFileMgr *aFileMgr, const char *aPath, byte *data, uint32 ch, uint32 sz);
 
 #endif // BENCHMARK_H

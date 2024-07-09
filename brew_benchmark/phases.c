@@ -21,7 +21,7 @@ static __inline void delay_bmips_loop(uint32 loops) {
 #endif
 
 #if defined(LINUX_BOGOMIPS)
-boolean BogoMIPS(BENCHMARK_RESULTS_CPU_T *result) {
+extern boolean BogoMIPS(BENCHMARK_RESULTS_CPU_T *result) {
 	uint32 loops_per_sec = 1;
 
 	while ((loops_per_sec *= 2)) {
@@ -119,7 +119,7 @@ static void *AllocateBiggestBlock(uint32 start_size, uint32 *max_block_size, uin
 	return block_address;
 }
 
-boolean TopOfBiggestRamBlocks(BENCHMARK_RESULTS_RAM_T *result) {
+extern boolean TopOfBiggestRamBlocks(BENCHMARK_RESULTS_RAM_T *result) {
 	uint16 i;
 	boolean error;
 	uint32 time_start;
@@ -158,7 +158,7 @@ boolean TopOfBiggestRamBlocks(BENCHMARK_RESULTS_RAM_T *result) {
 	return error;
 }
 
-boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result) {
+extern boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result) {
 	uint16 i;
 	boolean error;
 	uint32 total_size;
@@ -198,7 +198,7 @@ boolean TotalRamSize(BENCHMARK_RESULTS_RAM_T *result) {
 	return error;
 }
 
-boolean TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result, IShell *shell, IHeap *heap) {
+extern boolean TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result, IShell *shell, IHeap *heap) {
 	AEEDeviceInfo device_info;
 	uint16 i;
 	boolean error;
@@ -259,6 +259,142 @@ boolean TotalHeapSize(BENCHMARK_RESULTS_HEAP_T *result, IShell *shell, IHeap *he
 	return error;
 }
 
+static boolean GetFreeSpaceSize(IFileMgr *aFileMgr, boolean sdcard, uint32 *aFree, uint32 *aTotal) {
+	int32 result;
+	uint32 free_size;
+
+	if (sdcard) {
+		result = IFILEMGR_GetFreeSpaceEx(aFileMgr, AEEFS_CARD0_DIR, &free_size, aTotal);
+		*aFree = free_size;
+		return (result == AEE_SUCCESS) && (free_size > BENCHMARK_FILE_SIZE);
+	} else {
+		free_size = IFILEMGR_GetFreeSpace(aFileMgr, aTotal);
+		*aFree = free_size;
+		return (free_size > BENCHMARK_FILE_SIZE);
+	}
+
+	return FALSE;
+}
+
+static boolean DeleteFileIfExist(IFileMgr *aFileMgr, const char *aFilePath) {
+	if (IFILEMGR_Test(aFileMgr, aFilePath) == AEE_SUCCESS) {
+		return IFILEMGR_Remove(aFileMgr, aFilePath);
+	}
+	return FALSE;
+}
+
+extern boolean DiskBenchmark(AECHAR *res, IFileMgr *aFileMgr, const char *aPath, byte *data, uint32 ch, uint32 sz) {
+	uint32 i;
+	uint32 delta_a;
+	uint32 delta_b;
+	uint32 delta_w;
+	uint32 delta_r;
+
+	IFile *pIFile;
+
+	if (ch > MEMORY_CHUNK_BUFFER) {
+		return FALSE;
+	}
+
+	DeleteFileIfExist(aFileMgr, aPath);
+
+	/* Write File Benchmark. */
+	delta_a = GETUPTIMEMS();
+	pIFile = IFILEMGR_OpenFile(aFileMgr, aPath, _OFM_CREATE);
+	if (pIFile == NULL) {
+		return FALSE;
+	}
+	for (i = 0; i < sz; i += ch) {
+		IFILE_Write(pIFile, (PACKED const void *) data, ch);
+	}
+	IFILE_Release(pIFile);
+	delta_b = GETUPTIMEMS();
+	delta_w = delta_b - delta_a;
+
+	/* Read File Benchmark. */
+	delta_a = GETUPTIMEMS();
+	pIFile = IFILEMGR_OpenFile(aFileMgr, aPath, _OFM_READ);
+	if (pIFile == NULL) {
+		return FALSE;
+	}
+	for (i = 0; i < sz; i += ch) {
+		IFILE_Read(pIFile, (PACKED void *) data, ch);
+	}
+	IFILE_Release(pIFile);
+	delta_b = GETUPTIMEMS();
+	delta_r = delta_b - delta_a;
+
+	DeleteFileIfExist(aFileMgr, aPath);
+
+	WSPRINTF(res, sizeof(AECHAR) * RESULT_STRING, L"%luK, W:%lu, R:%lu, ms.\n", ch / 1024, delta_w, delta_r);
+
+	return TRUE;
+}
+
+extern boolean DisksResult(IFileMgr *aFileMgr, AECHAR *aDiskResult) {
+	uint32 free;
+	uint32 total;
+	byte *buffer;
+	AECHAR result[RESULT_STRING];
+
+	/* Clean string first. */
+	aDiskResult[0] = '\0';
+
+	/* Memory Buffer. */
+	buffer = MALLOC(MEMORY_CHUNK_BUFFER);
+	if (buffer  == NULL) {
+		WSTRCAT(aDiskResult, L"Cannot allocate memory buffer!\n");
+		return FALSE;
+	} else {
+		GETRAND(buffer, MEMORY_CHUNK_BUFFER);
+	}
+
+	/* Phone Memory Bench. */
+	if (GetFreeSpaceSize(aFileMgr, FALSE, &free, &total)) {
+		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L"Phone (%lu KiB file):\n", BENCHMARK_FILE_SIZE / 1024);
+		WSTRCAT(aDiskResult, result);
+
+		DiskBenchmark(result, aFileMgr, "brew_benchmark.bin", buffer, 0x1000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+		DiskBenchmark(result, aFileMgr, "brew_benchmark.bin", buffer, 0x2000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+		DiskBenchmark(result, aFileMgr, "brew_benchmark.bin", buffer, 0x4000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+		DiskBenchmark(result, aFileMgr, "brew_benchmark.bin", buffer, 0x8000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+
+		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L"Free: %lu B\nTotal: %lu B\n\n", free, total);
+		WSTRCAT(aDiskResult, result);
+	} else {
+		WSTRCAT(aDiskResult, L"Phone Memory Error!\n");
+	}
+
+	/* Card Memory Bench. */
+	if (GetFreeSpaceSize(aFileMgr, TRUE, &free, &total)) {
+		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L"MemCard (%lu KiB file):\n", BENCHMARK_FILE_SIZE / 1024);
+		WSTRCAT(aDiskResult, result);
+
+		DiskBenchmark(result, aFileMgr, AEEFS_CARD0_DIR "brew_benchmark.bin", buffer, 0x1000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+		DiskBenchmark(result, aFileMgr, AEEFS_CARD0_DIR "brew_benchmark.bin", buffer, 0x2000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+		DiskBenchmark(result, aFileMgr, AEEFS_CARD0_DIR "brew_benchmark.bin", buffer, 0x4000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+		DiskBenchmark(result, aFileMgr, AEEFS_CARD0_DIR "brew_benchmark.bin", buffer, 0x8000, BENCHMARK_FILE_SIZE);
+		WSTRCAT(aDiskResult, result);
+
+		WSPRINTF(result, sizeof(AECHAR) * RESULT_STRING, L"Free: %lu B\nTotal: %lu B\n\n", free, total);
+		WSTRCAT(aDiskResult, result);
+	} else {
+		WSTRCAT(aDiskResult, L"MemCard is full / not present!");
+	}
+
+	/* Free Memory Buffer. */
+	FREE(buffer);
+
+	return FALSE;
+}
+
 #if 0
 uint32 Bench_GPU_Passes(uint32 bmp_width, uint32 bmp_height, WCHAR *fps, WCHAR *fms, WCHAR *props) {
 	uint32 status;
@@ -302,168 +438,6 @@ uint32 Bench_GPU_Passes(uint32 bmp_width, uint32 bmp_height, WCHAR *fps, WCHAR *
 
 #endif
 //	CalculateAverageFpsAndTime(fps, fms);
-
-	return status;
-}
-
-uint32 DisksResult(WCHAR *disk_result) {
-	uint32 i;
-	uint32 status;
-	WCHAR *result;
-	VOLUME_DESCR_T volume_description;
-	WCHAR volumes[MAX_VOLUMES_COUNT * 3];
-	uint32 disk_count;
-	WCHAR disks[LENGTH_VOLUME_NAME * MAX_VOLUMES_COUNT];
-
-	disk_count = 0;
-	status = RESULT_OK;
-
-	/* Clean it first. */
-	disk_result[0] = '\0';
-	disk_result[1] = '\0';
-
-	result = DL_FsVolumeEnum(volumes);
-	if (!result) {
-		u_strcpy(disk_result, L"Error: Cannot get list of disks!\n");
-		return RESULT_FAIL;
-	}
-
-	for (i = 0; i < MAX_VOLUMES_COUNT; ++i) {
-		disks[(i * 4) + 0] = volumes[i * 3];
-		disks[(i * 4) + 1] = volumes[i * 3 + 1];
-		disks[(i * 4) + 2] = volumes[i * 3];
-		disks[(i * 4) + 3] = 0x0000;
-		disk_count += 1;
-		if (!volumes[i * 3 + 2]) {
-			break;
-		}
-	}
-
-	for (i = 0; i < disk_count; ++i) {
-		char disk_a[LENGTH_VOLUME_NAME];
-		WCHAR *disk_u = disks + (i * 4);
-		uint32 free_size_memory;
-		uint32 copy_address;
-
-		u_utoa(disk_u, disk_a);
-		if (!DL_FsGetVolumeDescr(disk_u, &volume_description)) {
-			u_strcpy(disk_result, L"Error: Cannot get volume description of disk: ");
-			u_strcat(disk_result, disk_u);
-			u_strcat(disk_result, L"\n");
-			return RESULT_FAIL;
-		}
-
-#if defined(EP1) || defined(EP2)
-		free_size_memory = volume_description.free;
-		copy_address = 0x03FC0000; /* iRAM */
-#elif defined(EM1) || defined(EM2)
-		free_size_memory = volume_description.free_size;
-		copy_address = 0x08000000; /* iRAM or RAM */
-#else
-		free_size_memory = 0;
-		copy_address = 0x00000000; /* iROM */
-#endif
-
-		LOG("Found volume: %s, free size: %d bytes.\n", disk_a, free_size_memory);
-		u_strcat(disk_result, disk_u);
-		u_strcat(disk_result, L" (128 KiB file):\n");
-		if (free_size_memory < 0x40000) { /* At least 262144 bytes. */
-			u_strcat(disk_result, L"No free 262144 bytes.");
-		} else {
-			DiskBenchmark(disk_result, disk_u, copy_address, 0x1000, 0x20000); /* Chunk: 4096  B, Size: 128 KiB. */
-			DiskBenchmark(disk_result, disk_u, copy_address, 0x2000, 0x20000); /* Chunk: 8192  B, Size: 128 KiB. */
-			DiskBenchmark(disk_result, disk_u, copy_address, 0x4000, 0x20000); /* Chunk: 16384 B, Size: 128 KiB. */
-		}
-	}
-
-	if (!disk_count) {
-		u_strcpy(disk_result, L"Error: No disks available!\n");
-	}
-
-	return status;
-}
-
-extern uint32 DiskBenchmark(WCHAR *disk_result, WCHAR *disk, uint32 addr, uint32 c_size, uint32 f_size) {
-	uint32 i;
-	uint32 rw;
-	INT32 res;
-	uint32 status;
-	FILE_HANDLE_T file;
-	WCHAR file_path[FS_MAX_URI_NAME_LENGTH / 4];
-	char *read_buffer;
-	uint64 time_start;
-	uint64 time_end;
-	uint32 time_result;
-	WCHAR num_u[RESULT_STRING];
-
-	status = RESULT_OK;
-
-	u_strcpy(file_path, L"file:/");
-	u_strcat(file_path, disk);
-	u_strcat(file_path, L"BENCH.bin");
-
-	u_ltou(c_size / 1024, num_u);
-	u_strcat(disk_result, num_u);
-	u_strcat(disk_result, L"K, ");
-
-	status |= DeleteFileIfExists(file_path);
-
-	/* Write File */
-	time_start = suPalReadTime();
-	file = DL_FsOpenFile(file_path, FILE_WRITE_MODE, NULL);
-	for (i = addr; i < addr + f_size; i += c_size) {
-		status |= DL_FsWriteFile((void *) i, c_size, 1, file, &rw);
-		if (rw == 0) {
-			status = RESULT_FAIL;
-		}
-	}
-	status |= DL_FsCloseFile(file);
-
-	time_end = suPalReadTime();
-	time_result = (uint32) suPalTicksToMsec(time_end - time_start);
-
-	u_ltou(time_result, num_u);
-	u_strcat(disk_result, L"W:");
-	u_strcat(disk_result, num_u);
-	u_strcat(disk_result, L", ");
-
-	/* Read File */
-	read_buffer = suAllocMem(c_size, &res);
-	time_start = suPalReadTime();
-	if (res == RESULT_OK) { /* No Allocation Error. */
-		file = DL_FsOpenFile(file_path, FILE_READ_MODE, NULL);
-		for (i = addr; i < addr + f_size; i += c_size) {
-			status = DL_FsReadFile((void *) read_buffer, c_size, 1, file, &rw);
-			if (rw == 0) {
-				status = RESULT_FAIL;
-			}
-		}
-		status |= DL_FsCloseFile(file);
-		time_end = suPalReadTime();
-		time_result = (uint32) suPalTicksToMsec(time_end - time_start);
-		suFreeMem(read_buffer);
-
-		u_ltou(time_result, num_u);
-		u_strcat(disk_result, L"R:");
-		u_strcat(disk_result, num_u);
-		u_strcat(disk_result, L", ms.\n");
-	} else {
-		u_strcat(disk_result, L"Error: Can allocate chunk buffer.\n");
-	}
-
-	status |= DeleteFileIfExists(file_path);
-
-	return status;
-}
-
-static uint32 DeleteFileIfExists(const AECHAR *file_path) {
-	uint32 status;
-
-	status = RESULT_FAIL;
-
-	if (DL_FsFFileExist(file_path)) {
-		status = DL_FsDeleteFile(file_path, 0);
-	}
 
 	return status;
 }

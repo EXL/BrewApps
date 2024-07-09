@@ -35,7 +35,9 @@
 		</Privileges>
 		<Exported/>
 		<MimeTypes/>
-		<Imported/>
+		<Imported>
+			<Class CLSID="0x0101414e"/>
+		</Imported>
 		<ACLs>
 			<ACL Type="fs"/>
 		</ACLs>

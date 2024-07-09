@@ -79,6 +79,7 @@ typedef struct {
 	BENCHMARK_RESULTS_CPU_T cpu_result;
 	BENCHMARK_RESULTS_RAM_T ram_result;
 	BENCHMARK_RESULTS_HEAP_T heap_result;
+	AECHAR disk_result[RESULT_STRING * 10];
 } APP_INSTANCE_T;
 
 static boolean APP_InitAppData(AEEApplet *pMe);
@@ -477,7 +478,10 @@ static boolean APP_ShowResults(AEEApplet *pMe) {
 			WSPRINTF(text, sizeof(AECHAR) * 1024,
 				L"Total available:\n    %s\n    %s\n\nUsed memory:\n    %s",
 				app->heap_result.total, app->heap_result.desc, app->heap_result.used);
-
+			break;
+		case APP_MENU_ITEM_DISK:
+			DisksResult(app->m_pIFileMgr, app->disk_result);
+			WSPRINTF(text, sizeof(AECHAR) * 1024, L"%s", app->disk_result);
 			break;
 		default:
 			ISHELL_LoadResString(app->m_App.m_pIShell, BREW_BENCHMARK_RES_FILE,
