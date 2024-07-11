@@ -9,3 +9,4 @@ cmake_minimum_required(VERSION 3.16)
 project(BrewApps)
 
 add_subdirectory(brew_benchmark)
+add_subdirectory(brew_fire_effect)
